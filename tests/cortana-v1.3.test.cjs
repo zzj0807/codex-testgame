@@ -1,6 +1,6 @@
 const {strict:assert}=require('node:assert');
 const fs=require('node:fs'),vm=require('node:vm');
-const AI=require('../dist/ai.js');
+const AI=require('../dist/cortana-v1.3/ai.js');
 const deck=[1,1,1,1.5,2,2,2.5,3];
 const view={ownCards:deck,publicHistory:[],ownHp:3,opponentHp:3,skillUsed:false};
 const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-10,`${a} != ${b}`);
@@ -30,7 +30,7 @@ const poisoned={...view};for(const name of ['player','selected','skillArmed'])Ob
 assert.deepEqual(AI.planRound(poisoned,.9,.5),AI.planRound(view,.9,.5));
 assert.ok(Object.isFrozen(AI.planRound(view,.9,.5)));
 const frozen=Object.freeze({...view,ownCards:Object.freeze([...deck]),publicHistory:Object.freeze([])});AI.planRound(frozen,.9,.2);
-function game(){const els={};const context={document:{getElementById:id=>els[id]??(els[id]={attributes:{},setAttribute(k,v){this.attributes[k]=v},addEventListener(){}})},Math:Object.create(Math)};context.Math.random=()=>.99;vm.createContext(context);vm.runInContext(fs.readFileSync('dist/ai.js','utf8'),context);vm.runInContext(fs.readFileSync('dist/game.js','utf8'),context);return{context,els,run:s=>vm.runInContext(s,context)};}
+function game(){const els={};const context={document:{getElementById:id=>els[id]??(els[id]={attributes:{},setAttribute(k,v){this.attributes[k]=v},addEventListener(){}})},Math:Object.create(Math)};context.Math.random=()=>.99;vm.createContext(context);vm.runInContext(fs.readFileSync('dist/cortana-v1.3/ai.js','utf8'),context);vm.runInContext(fs.readFileSync('dist/cortana-v1.3/game.js','utf8'),context);return{context,els,run:s=>vm.runInContext(s,context)};}
 const g=game(),run=g.run;
 const data=s=>JSON.parse(JSON.stringify(run(s)));
 const fresh=(a,b)=>run(`Math.random=(()=>{let draws=[${a},${b}];return()=>draws.length?draws.shift():.9})();start()`);
@@ -74,6 +74,6 @@ for(let n=0;n<500;n++){
   assert.ok(history.filter(h=>h.amplified).length<=1);assert.ok(history.filter(h=>h.swapped).length<=1);assert.ok(++count<=9);
  }
 }
-const html=fs.readFileSync('dist/index.html','utf8');assert(!/25%|1\/3|1\/4|softmax|概率|权重|记牌/.test(html));
+const html=fs.readFileSync('dist/cortana-v1.3/index.html','utf8');assert(!/25%|1\/3|1\/4|softmax|概率|权重|记牌/.test(html));
 console.log('PASS: exact 25% gate, skill groups, probability scoring, public-only inference, no rerolls, UI states, skill counter, 9-round draw, 500 seeded games.');
 console.log('Opening normal probabilities by card: '+normal.map(p=>(100*p).toFixed(2)+'%').join(', '));

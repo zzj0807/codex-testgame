@@ -1,5 +1,5 @@
 // Reproducible balance check; this is a simulated opponent, not human play.
-const AI=require('../dist/ai.js');
+const AI=require('../dist/cortana-v1.3/ai.js');
 const DECK=[1,1,1,1.5,2,2,2.5,3];
 const rng=seed=>()=>{seed=(Math.imul(1664525,seed)+1013904223)>>>0;return seed/4294967296};
 function simulate(tactical,reactToSkill,game){

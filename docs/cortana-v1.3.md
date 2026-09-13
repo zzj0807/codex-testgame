@@ -2,7 +2,7 @@
 
 这份说明供开发与审阅使用。**游戏界面不展示这些运行算法、抽牌权重、概率参数或评分。** 页面只展示玩法规则、C 已选牌状态和已发动的技能。
 
-实现：[`dist/ai.js`](../dist/ai.js)。回合锁定与结算：[`dist/game.js`](../dist/game.js)。
+实现：[`1.3 ai.js`](../dist/cortana-v1.3/ai.js)。回合锁定与结算：[`1.3 game.js`](../dist/cortana-v1.3/game.js)。
 
 ## 1. C 能使用哪些信息？
 
