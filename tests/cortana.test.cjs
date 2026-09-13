@@ -4,7 +4,7 @@ const elements={};
 const context={document:{getElementById:id=>elements[id]??(elements[id]={attributes:{},setAttribute(k,v){this.attributes[k]=v;},addEventListener(){}})},Math:Object.create(Math)};
 context.Math.random=()=>.999;
 vm.createContext(context);
-vm.runInContext(fs.readFileSync('dist/game.js','utf8'),context);
+vm.runInContext(fs.readFileSync('dist/cortana-v1.2/game.js','utf8'),context);
 const run=s=>vm.runInContext(s,context);
 const data=s=>JSON.parse(JSON.stringify(run(s)));
 function fresh(skillTicket,cardTicket){run(`Math.random=(()=>{let draws=[${skillTicket},${cardTicket}];return()=>draws.length?draws.shift():0})();start()`);}

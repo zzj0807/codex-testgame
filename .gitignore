@@ -8,3 +8,4 @@
 *.pem
 *.key
 .sites-package-v3/
+.sites-package-v4/
