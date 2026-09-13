@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>八牌对决 · 卡牌竞技场</title><meta name="description" content="八张手牌，三点生命。选择你的卡牌，与随机出牌的电脑同时亮牌对决。"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='6' y='2' width='20' height='28' rx='4' fill='%23c9f568'/%3E%3Cpath d='M16 8L22 16L16 24L10 16Z' fill='%23171920'/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css"></head>
 <body><main>
-<header><a class="brand" href="./"><span class="brand-icon">♦</span> 八牌对决 <span class="edition">CARD DUEL / 02</span></a><a class="version-link" href="classic/">经典版 ↗</a><button id="restart" class="secondary">↻ 重新开始</button></header>
+<header><a class="brand" href="./"><span class="brand-icon">♦</span> 八牌对决 <span class="edition">CARD DUEL / 01</span></a><button id="restart" class="secondary">↻ 重新开始</button></header>
 <div class="layout"><section class="game" aria-label="对战牌桌">
 <div class="table-top"><span class="eyebrow">THE ARENA <span>/ 人机对战</span></span><span id="round" class="round">第 01 回合</span></div>
 <div class="player-row"><div class="identity"><span class="avatar computer">CPU</span><div><h2>电脑玩家</h2><p>随机出牌 <span id="cpu-count">· 8 张手牌</span></p></div></div><div id="cpu-hp" class="hearts" aria-label="电脑血量"></div></div>
@@ -10,9 +10,9 @@
 <div class="arena"><div class="slot"><span class="slot-label">你的出牌</span><div id="your-card" class="battle-card empty">?</div></div><div class="versus"><span>VS</span><i></i><small>同时亮牌</small></div><div class="slot"><span class="slot-label">电脑出牌</span><div id="their-card" class="battle-card empty">?</div></div></div>
 <div class="status" aria-live="polite"><h1 id="status-title">这一回合，你出几？</h1><p id="status-desc">选择一张手牌，确认后双方同时亮牌。</p></div>
 <div class="player-row yours"><div class="identity"><span class="avatar human">你</span><div><h2>我的手牌</h2><p id="hand-count">8 张可用 · 点击选择</p></div></div><div id="your-hp" class="hearts" aria-label="玩家血量"></div></div>
-<div id="hand" class="hand"></div><div class="skill-row"><button id="skill" class="skill" aria-pressed="false" aria-describedby="skill-description">⇄ 移花接木 · 1 次</button><p id="skill-description">确认前开启：本回合不扣血，交换的牌回到双方手中。</p></div><div class="action-row"><span id="selection-hint">每张牌，只能使用一次。</span><button id="action" class="primary" disabled>请先选择卡牌 <span>→</span></button></div>
+<div id="hand" class="hand"></div><div class="action-row"><span id="selection-hint">每张牌，只能使用一次。</span><button id="action" class="primary" disabled>请先选择卡牌 <span>→</span></button></div>
 </section><aside><section class="intro"><span class="eyebrow">EIGHT CARDS. ONE WINNER.</span><h2>八张牌。<br>每一步，都算数。</h2><p>把大牌留到最后，<br>还是此刻全力出击？</p><div class="rule-numbers"><div><strong>08</strong><span>初始手牌</span></div><div><strong>03</strong><span>初始血量</span></div></div></section>
-<section class="rules"><h3>对决规则 <span>↗</span></h3><ol><li>选择一张卡牌，再确认出牌。</li><li>电脑从剩余手牌中随机选一张，双方同时亮牌。</li><li>点数较小的一方扣 1 点血；相同则均不扣血。</li><li>血量归零立即落败。普通回合出过的牌会弃置。</li><li>移花接木每局一次：确认前开启，该回合不扣血，交换双方出牌并回到手牌。</li></ol><p class="note">牌用完时，血量较多者获胜；血量相同则平局。</p><div class="deck-key">初始牌组 <span>1 × 3 · 1.5 × 1 · 2 × 2 · 2.5 × 1 · 3 × 1</span></div></section>
+<section class="rules"><h3>对决规则 <span>↗</span></h3><ol><li>选择一张卡牌，再确认出牌。</li><li>电脑从剩余手牌中随机选一张，双方同时亮牌。</li><li>点数较小的一方扣 1 点血；相同则均不扣血。</li><li>血量归零立即落败。出过的牌不能再次使用。</li></ol><p class="note">牌用完时，血量较多者获胜；血量相同则平局。</p><div class="deck-key">初始牌组 <span>1 × 3 · 1.5 × 1 · 2 × 2 · 2.5 × 1 · 3 × 1</span></div></section>
 <section class="history"><h3>对战记录 <span id="history-count">00</span></h3><div id="history"><p class="history-empty">牌桌已就绪。<br>你的第一步，会是什么？</p></div></section></aside></div>
 <footer><span>八牌对决</span><span>相同的手牌，不同的选择。</span><span>PLAYER vs COMPUTER</span></footer>
 </main><script src="game.js"></script></body></html>

@@ -1,0 +1,20 @@
+const {strict:assert}=require('node:assert');
+const vm=require('node:vm'),fs=require('node:fs');
+function game(file){const els={};const c={document:{getElementById:id=>els[id]??(els[id]={setAttribute(){},addEventListener(){}})},Math:Object.create(Math)};vm.createContext(c);vm.runInContext(fs.readFileSync(file,'utf8'),c);return s=>vm.runInContext(s,c);}
+const run=game('dist/game.js');
+run('Math.random=()=>.999;choose(0);toggleSkill();confirm()');
+assert.equal(run('state.hp'),3);assert.equal(run('state.cpuHp'),3);
+assert.equal(run('state.player[0].value'),3);assert.equal(run('state.player[0].used'),false);
+assert.equal(run('state.cpu.at(-1)'),1);assert.equal(run('state.cpu.length'),8);
+assert.equal(run('state.history[0].player'),1);assert.equal(run('state.history[0].cpu'),3);
+assert.equal(run('confirm()'),false);assert.equal(run('toggleSkill()'),false);
+run('next()');assert.equal(run('toggleSkill()'),false);assert.equal(run('choose(0)'),true);
+run('confirm()');assert.equal(run('state.cpuHp'),2);assert.equal(run('state.cpu.length'),7);
+run('start();toggleSkill();toggleSkill();choose(0);confirm()');assert.equal(run('state.hp'),2);assert.equal(run('state.skillUsed'),false);
+run('start();Math.random=()=>0;for(let i=0;i<7;i++){choose(i);confirm();next()}toggleSkill();choose(7);confirm()');
+assert.equal(run('state.phase'),'reveal');assert.equal(run('state.cpu.length'),1);assert.equal(run('state.hp'),3);
+run('next();choose(7);confirm()');assert.equal(run('state.round'),9);assert.equal(run('state.phase'),'over');assert.equal(run('state.hp'),3);
+run('start()');assert.equal(run('state.skillUsed'),false);assert.equal(run('state.skillArmed'),false);assert.equal(run('state.player[0].value'),1);
+run('Math.random=()=>.999;choose(0);confirm();next();choose(1);confirm();next();choose(2);confirm()');assert.equal(run('state.hp'),0);assert.equal(run('state.phase'),'over');
+const classic=game('dist/classic/game.js');classic('Math.random=()=>0;for(let i=0;i<8;i++){choose(i);confirm();if(i<7)next()}');assert.equal(classic('state.phase'),'over');assert.equal(classic('state.hp'),3);
+console.log('PASS: swapping, no damage, returned cards, once-only, cancel, reset, ninth round, normal defeat and classic draw.');
