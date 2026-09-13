@@ -10,7 +10,6 @@ function prepareRound() {
     ownHp: state.cpuHp,
     opponentHp: state.hp,
     skillUsed: state.cpuSkillUsed,
-    modelWeights: state.cpuModels,
   };
   state.cpuPlan = CortanaAI.planRound(publicView, Math.random(), Math.random());
   state.cpuSkillActive = state.cpuPlan.skillActive;
@@ -23,7 +22,6 @@ function start() {
 
     cpuSkillUsed: false, cpuSkillActive: false,
     cpuPlan: null,
-    cpuModels: [1 / 3, 1 / 3, 1 / 3],
   };
   prepareRound();
   render();
@@ -31,12 +29,11 @@ function start() {
 function choose(id) {
   if (state.phase !== 'select' || !Number.isInteger(id) || !state.player[id] || state.player[id].used) return false;
   state.selected = id;
-  if (state.player[id].value === 1) state.skillArmed = false;
   render();
   return true;
 }
 function toggleSkill() {
-  if (state.phase !== 'select' || state.skillUsed || (state.selected !== null && state.player[state.selected].value === 1)) return false;
+  if (state.phase !== 'select' || state.skillUsed) return false;
   state.skillArmed = !state.skillArmed;
   render();
   return true;
@@ -44,7 +41,7 @@ function toggleSkill() {
 function confirm() {
   if (state.phase !== 'select' || state.selected === null) return false;
   const card = state.player[state.selected];
-  if (card.used || (state.skillArmed && card.value === 1)) return false;
+  if (card.used) return false;
   const swapped = state.skillArmed && !state.skillUsed;
   const index = state.cpuPlan.index;
   const enemy = state.cpu[index], played = card.value;
@@ -64,7 +61,6 @@ function confirm() {
     if (result > 0) state.cpuHp = Math.max(0, state.cpuHp - damage);
   }
   state.history.push({ round: state.round, player: played, cpu: enemy, result, damage, swapped, amplified, countered: swapped && amplified });
-  state.cpuModels = CortanaAI.updateBeliefs(state.cpuPlan.evidence, { player: played, swapped });
   state.cpuSkillActive = false;
   state.phase = state.hp === 0 || state.cpuHp === 0 || state.cpu.length === 0 ? 'over' : 'reveal';
   render();
@@ -128,11 +124,10 @@ function render() {
       desc = `不扣血。你获得 ${last.cpu} 点，C 获得 ${last.player} 点，下回合可用。${last.countered ? '双方技能均已消耗。' : ''}`;
     }
   }
-  const oneSelected = state.selected !== null && state.player[state.selected].value === 1;
-  $('skill').disabled = state.skillUsed || !selecting || oneSelected;
+  $('skill').disabled = state.skillUsed || !selecting;
   $('skill').setAttribute('aria-pressed', String(state.skillArmed));
   $('skill').textContent = state.skillUsed ? '⇄ 移花接木 · 已用完' : state.skillArmed ? '✓ 本回合换牌 · 点击取消' : '⇄ 移花接木 · 1 次';
-  $('skill-description').textContent = state.skillUsed ? '本局技能已消耗，新对局恢复。' : oneSelected && selecting ? '1 点牌不能使用移花接木。技能未消耗，换一张牌即可开启。' : '选择大于 1 点的牌才能开启；不扣血并交换卡牌，C 无法得知你是否开启。';
+  $('skill-description').textContent = state.skillUsed ? '本局技能已消耗，新对局恢复。' : '确认前开启：不扣血、交换卡牌，可抵消 C 的伤害翻倍。';
   if (state.phase === 'over') {
     const win = Math.sign(state.hp - state.cpuHp);
     title = win > 0 ? '对局胜利！' : win < 0 ? '对局结束，惜败' : '对局结束，平局';
