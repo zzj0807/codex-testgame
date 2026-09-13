@@ -3,25 +3,40 @@ const DECK = [1, 1, 1, 1.5, 2, 2, 2.5, 3];
 const $ = id => document.getElementById(id);
 let state;
 
+// A value group of 1 or 1.5 keeps its total weight while available.
+// Each remaining higher card has its own weight; unavailable groups contribute 0.
+function swapWeights(cards) {
+  const ones = cards.filter(value => value === 1).length;
+  const halves = cards.filter(value => value === 1.5).length;
+  return cards.map(value => value === 1 ? 0.25 / ones : value === 1.5 ? 0.25 / halves : 0.125);
+}
+function weightedIndex(weights, ticket) {
+  const total = weights.reduce((sum, weight) => sum + weight, 0);
+  if (!weights.length || total <= 0) throw new Error('没有可用的手牌');
+  const threshold = ticket * total;
+  let cumulative = 0;
+  for (let i = 0; i < weights.length; i++) {
+    cumulative += weights[i];
+    if (threshold < cumulative) return i;
+  }
+  return weights.length - 1;
+}
 function prepareRound() {
-  const publicView = {
-    ownCards: [...state.cpu],
-    publicHistory: state.history.map(({ player, cpu, swapped }) => ({ player, cpu, swapped })),
-    ownHp: state.cpuHp,
-    opponentHp: state.hp,
-    skillUsed: state.cpuSkillUsed,
-  };
-  state.cpuPlan = CortanaAI.planRound(publicView, Math.random(), Math.random());
-  state.cpuSkillActive = state.cpuPlan.skillActive;
+  // Commit both rule-dependent choices before player input. Toggling a skill
+  // or selecting a different card never rerolls Cortana's choices.
+  const ticket = Math.random();
+  state.cpuChoice = Math.floor(ticket * state.cpu.length);
+  state.cpuSwapChoice = weightedIndex(swapWeights(state.cpu), ticket);
+  state.cpuSkillActive = !state.cpuSkillUsed && state.round === state.cpuSkillRound;
 }
 function start() {
   state = {
     player: DECK.map((value, id) => ({ value, id, used: false })),
     cpu: [...DECK], hp: 3, cpuHp: 3, round: 1, selected: null,
     phase: 'select', history: [], skillUsed: false, skillArmed: false,
-
+    cpuSkillRound: 1 + Math.floor(Math.random() * 8),
     cpuSkillUsed: false, cpuSkillActive: false,
-    cpuPlan: null,
+    cpuChoice: null, cpuSwapChoice: null,
   };
   prepareRound();
   render();
@@ -43,7 +58,7 @@ function confirm() {
   const card = state.player[state.selected];
   if (card.used) return false;
   const swapped = state.skillArmed && !state.skillUsed;
-  const index = state.cpuPlan.index;
+  const index = swapped ? state.cpuSwapChoice : state.cpuChoice;
   const enemy = state.cpu[index], played = card.value;
   const amplified = state.cpuSkillActive;
   const result = swapped ? 0 : Math.sign(played - enemy);
