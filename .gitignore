@@ -7,3 +7,4 @@
 !.env.example
 *.pem
 *.key
+.sites-package-v3/

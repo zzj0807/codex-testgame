@@ -1,7 +1,7 @@
 const {strict:assert}=require('node:assert');
 const vm=require('node:vm'),fs=require('node:fs');
 function game(file){const els={};const c={document:{getElementById:id=>els[id]??(els[id]={setAttribute(){},addEventListener(){}})},Math:Object.create(Math)};vm.createContext(c);vm.runInContext(fs.readFileSync(file,'utf8'),c);return s=>vm.runInContext(s,c);}
-const run=game('dist/game.js');
+const run=game('dist/swap-v1/game.js');
 run('Math.random=()=>.999;choose(0);toggleSkill();confirm()');
 assert.equal(run('state.hp'),3);assert.equal(run('state.cpuHp'),3);
 assert.equal(run('state.player[0].value'),3);assert.equal(run('state.player[0].used'),false);
