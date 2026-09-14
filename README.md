@@ -1,20 +1,34 @@
-# 八牌对决 · Cortana v1.4.1
+# 八牌对决 · Cortana v1.5
 
 **八张手牌、三点血量。选择你的牌，在公开技能与隐藏交换之间做出判断。**
 
 ## 🎮 点击这里直接玩
 
-### [▶ 开始游戏：最新版 v1.4.1](https://zzj0807.github.io/codex-testgame/?v=1.4.1)
+### [▶ 开始游戏：最新版 v1.5](https://zzj0807.github.io/codex-testgame/?v=1.5)
 
 无需注册、登录、下载或 API Key，手机和电脑浏览器均可游玩。
 
 历史版本独立保留：
 
+- [Cortana v1.4.1](https://zzj0807.github.io/codex-testgame/cortana-v1.4.1/)
 - [Cortana v1.4](https://zzj0807.github.io/codex-testgame/cortana-v1.4/)
 - [Cortana v1.3](https://zzj0807.github.io/codex-testgame/cortana-v1.3/)
 - [Cortana v1.2](https://zzj0807.github.io/codex-testgame/cortana-v1.2/)
 - [移花接木初版 v1.1](https://zzj0807.github.io/codex-testgame/swap-v1/)
 - [无技能经典版 v1.0](https://zzj0807.github.io/codex-testgame/classic/)
+
+## v1.5 更新
+
+本版升级界面与操作体验，**C 的决策算法完整沿用 v1.4.1**。
+
+- **规则按需查看。** 顶部「规则」按钮打开完整说明，主画面只保留必要提示；手机和电脑都可直接关闭返回原来的选牌。
+- **公开信息记牌器。** 查看 C 剩余牌的点数和数量，普通出牌与移花接木都会正确更新。包含本轮未亮出的牌，不标记 C 的当前选择。
+- **移牌、翻牌、再结算。** 双方牌背移入验牌区后同时翻开；交换回合增加回手动画。动画期间不能重复出牌，重开会取消旧动画。
+- **扣血减少爱心。** 剩余血量使用 SVG 爱心和数字显示，不再依赖心形字符变灰。
+- **手机适配。** 工具按钮、四列手牌和可滚动规则面板；系统减少动态效果时直接显示结果。
+- 保留 v1.4.1 及更早版本的独立入口。
+
+[查看 v1.5 的交互设计、兼容性与验证结果](docs/interface-v1.5.md)。
 
 ## v1.4.1 更新
 
@@ -42,8 +56,9 @@
 1. 点击一张手牌，确认前可改选。
 2. 查看 C 头像下的选牌及技能状态；「伤害 ×2」亮起时，C 已发动技能。
 3. 若选择的牌大于 1 点，可开启移花接木，再次点击可取消。
-4. 确认出牌，双方同时亮牌并结算。
-5. 点击「下一回合」继续，或「重新开始」重开一局。
+4. 点击「确认开牌」，双方牌移入验牌区、同时翻开，再显示结果。
+5. 点击「下一回合」继续，或「重开」开始新局。
+6. 顶部「规则」查看完整玩法；「记牌器」查看 C 的剩余牌，关闭面板不会更改选牌。
 
 双方初始血量均为 **3 点**，各持 **8 张牌**：
 
@@ -75,7 +90,8 @@
 
 | 版本 | Git 标签 | 本地入口 |
 | --- | --- | --- |
-| v1.4.1 确定斩杀版 | `v1.4.1-cortana` | `dist/index.html` |
+| v1.5 界面体验版 | 最新 `main` | `dist/index.html` |
+| v1.4.1 确定斩杀版 | `v1.4.1-cortana` | `dist/cortana-v1.4.1/index.html` |
 | v1.4 隐藏换牌预测版 | `v1.4.0-cortana` | `dist/cortana-v1.4/index.html` |
 | v1.3 公开信息决策版 | `v1.3.0-cortana` | `dist/cortana-v1.3/index.html` |
 | v1.2 Cortana 初版 | `v1.2.0-cortana` | `dist/cortana-v1.2/index.html` |
@@ -94,7 +110,7 @@
 
 ## 开发与验证
 
-`main` 保存完整源码、文档与测试；`gh-pages` 保存发布网页。`dist/ai.js` 处理公开信息决策，`dist/game.js` 处理界面和真实结算。
+`main` 保存完整源码、文档与测试；`gh-pages` 保存发布网页。`dist/ai.js` 处理公开信息决策，`dist/game.js` 处理对局状态和真实结算，`dist/ui.js` 处理弹窗、公开记牌和动画。
 
 安装 Node.js 后运行：
 
@@ -104,8 +120,17 @@ node tests/cortana.test.cjs
 node tests/cortana-v1.3.test.cjs
 node tests/cortana-v1.4.test.cjs
 node tests/cortana-v1.4.1.test.cjs
+node tests/interface-v1.5.test.cjs
 node tests/ai-v1.4.1-benchmark.cjs 10000 250
 ```
+
+浏览器交互测试需要 Playwright 和已安装的 Chromium：
+
+```sh
+node tests/browser-v1.5.test.cjs
+```
+
+可用环境变量 `PLAYWRIGHT_MODULE` 指定现有 Playwright 包位置，或以 `PLAYWRIGHT_CHANNEL=msedge` 使用已安装的 Edge。测试截图保存在本地 `.qa-v1.5/`，不随源码发布。
 
 修改游戏并提交后发布：
 
