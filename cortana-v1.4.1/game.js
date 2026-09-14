@@ -16,8 +16,6 @@ function prepareRound() {
   state.cpuSkillActive = state.cpuPlan.skillActive;
 }
 function start() {
-  DuelUI.cancel();
-  DuelUI.closePanels();
   state = {
     player: DECK.map((value, id) => ({ value, id, used: false })),
     cpu: [...DECK], hp: 3, cpuHp: 3, round: 1, selected: null,
@@ -47,27 +45,10 @@ function confirm() {
   if (state.phase !== 'select' || state.selected === null) return false;
   const card = state.player[state.selected];
   if (card.used || (state.skillArmed && card.value === 1)) return false;
-  const owner = state;
-  const turn = Object.freeze({ id: card.id, index: state.cpuPlan.index,
-    player: card.value, cpu: state.cpu[state.cpuPlan.index],
-    swapped: state.skillArmed && !state.skillUsed, amplified: state.cpuSkillActive });
-  state.phase = 'animating';
-  DuelUI.closePanels();
-  render();
-  // The locked plan and public state stay untouched until both cards are revealed.
-  return DuelUI.play(turn).catch(() => {}).then(() => {
-    if (state !== owner) return false;
-    return settleRound(turn);
-  });
-}
-function settleRound(turn) {
-  if (state.phase !== 'animating') return false;
-  const card = state.player[turn.id];
-  if (card.used || (state.skillArmed && card.value === 1)) return false;
-  const swapped = turn.swapped;
-  const index = turn.index;
-  const enemy = turn.cpu, played = turn.player;
-  const amplified = turn.amplified;
+  const swapped = state.skillArmed && !state.skillUsed;
+  const index = state.cpuPlan.index;
+  const enemy = state.cpu[index], played = card.value;
+  const amplified = state.cpuSkillActive;
   const result = swapped ? 0 : Math.sign(played - enemy);
   const damage = result === 0 ? 0 : amplified ? 2 : 1;
   if (amplified) state.cpuSkillUsed = true;
@@ -98,39 +79,36 @@ function next() {
   render();
   return true;
 }
+function hearts(id, hp, name) {
+  $(id).innerHTML = [0, 1, 2].map(i => `<span class="${i < hp ? '' : 'lost'}" aria-hidden="true">♥</span>`).join('');
+  $(id).setAttribute('aria-label', `${name}剩余 ${hp} 点血量`);
+}
 function render() {
   const selecting = state.phase === 'select';
-  const busy = state.phase === 'animating';
-  const settled = state.phase === 'reveal' || state.phase === 'over';
   const last = state.history.at(-1);
-  $('comparison').textContent = settled ? last.swapped ? '⇄' : last.result > 0 ? '>' : last.result < 0 ? '<' : '=' : 'VS';
-  DuelUI.inventory(DECK, state.history);
-  $('rules-button').disabled = busy;
-  $('recorder-button').disabled = busy;
-  $('arena').setAttribute('aria-busy', String(busy));
-  DuelUI.hearts('your-hp', state.hp, '你');
-  DuelUI.hearts('cpu-hp', state.cpuHp, 'Cortana');
+  hearts('your-hp', state.hp, '你');
+  hearts('cpu-hp', state.cpuHp, 'Cortana');
   $('round').textContent = `第 ${String(state.round).padStart(2, '0')} 回合`;
   $('cpu-count').textContent = `${state.cpu.length} 张手牌`;
   $('cpu-hand').innerHTML = state.cpu.map(() => '<div class="back" aria-hidden="true">♦</div>').join('');
-  $('cpu-ready').className = `state-badge ${!settled ? 'lit' : ''}`;
+  $('cpu-ready').className = `state-badge ${selecting ? 'lit' : ''}`;
   $('cpu-ready').textContent = '已选牌';
-  $('cpu-ready').setAttribute('aria-label', !settled ? 'Cortana 已选牌，等待亮牌' : '本回合已亮牌，选牌状态熄灭');
-  $('cpu-skill').className = `state-badge power-badge ${!settled && state.cpuSkillActive ? 'lit' : ''}`;
+  $('cpu-ready').setAttribute('aria-label', selecting ? 'Cortana 已选牌，等待你确认' : '本回合已亮牌，选牌状态熄灭');
+  $('cpu-skill').className = `state-badge power-badge ${selecting && state.cpuSkillActive ? 'lit' : ''}`;
   $('cpu-skill').textContent = state.cpuSkillActive ? '伤害 ×2' : state.cpuSkillUsed ? '技能已用' : '技能待用';
   $('cpu-skill').setAttribute('aria-label', state.cpuSkillActive ? 'Cortana 已发动技能：本回合伤害翻倍' : state.cpuSkillUsed ? 'Cortana 本局技能已用完' : 'Cortana 技能尚未发动');
-  $('hand-count').textContent = `${state.player.filter(c => !c.used).length} 张可用${selecting ? ' · 点击选择' : ''}`;
+  $('hand-count').textContent = `${state.player.filter(c => !c.used).length} 张可用 · 点击选择`;
   $('hand').innerHTML = state.player.map(c => `<button class="card ${c.used ? 'used' : ''} ${state.selected === c.id && !c.used ? 'selected' : ''}" data-id="${c.id}" aria-label="${c.value} 点卡牌${c.used ? '，已使用' : ''}" aria-pressed="${state.selected === c.id && !c.used}" ${c.used || !selecting ? 'disabled' : ''}><span class="corner">${c.value}</span><strong>${c.value}</strong><span class="diamond">♦</span></button>`).join('');
-  $('your-card').className = `battle-card ${!settled ? 'empty' : 'revealed'}`;
-  $('their-card').className = `battle-card ${!settled ? 'empty' : 'revealed enemy'}`;
-  $('your-card').textContent = !settled ? '?' : last.player;
-  $('their-card').textContent = !settled ? '?' : last.cpu;
+  $('your-card').className = `battle-card ${selecting ? 'empty' : 'revealed'}`;
+  $('their-card').className = `battle-card ${selecting ? 'empty' : 'revealed enemy'}`;
+  $('your-card').textContent = selecting ? '?' : last.player;
+  $('their-card').textContent = selecting ? '?' : last.cpu;
   let title = '这一回合，你出几？';
-  let desc = '选择手牌，确认后同时亮牌。';
+  let desc = 'C 已选牌。选择你的手牌，确认后双方同时亮牌。';
   let action = '请先选择卡牌';
   if (selecting && state.selected !== null) {
     desc = `已选择 ${state.player[state.selected].value} 点，确认前可以换牌。`;
-    action = '确认开牌';
+    action = '确认出牌';
   }
   if (selecting && state.cpuSkillActive) {
     title = 'C 已发动技能 · 本回合伤害 ×2';
@@ -138,9 +116,9 @@ function render() {
   }
   if (selecting && state.skillArmed) {
     desc = state.cpuSkillActive ? '移花接木已开启：不扣血、交换卡牌，并抵消 C 的技能。' : '已开启移花接木：本回合不扣血，交换双方出牌。';
-    if (state.selected !== null) action = '确认开牌并换牌';
+    if (state.selected !== null) action = '确认出牌并换牌';
   }
-  if (settled) {
+  if (!selecting) {
     title = last.result > 0 ? '漂亮，这一回合你赢了' : last.result < 0 ? '这一回合，Cortana 胜出' : '势均力敌，本回合平局';
     desc = last.result > 0 ? `Cortana 扣除 ${last.damage} 点血量。` : last.result < 0 ? `你扣除 ${last.damage} 点血量。` : '双方点数相同，血量不变。';
     if (last.amplified) desc += 'C 的技能已消耗。';
@@ -154,19 +132,18 @@ function render() {
   $('skill').disabled = state.skillUsed || !selecting || oneSelected;
   $('skill').setAttribute('aria-pressed', String(state.skillArmed));
   $('skill').textContent = state.skillUsed ? '⇄ 移花接木 · 已用完' : state.skillArmed ? '✓ 本回合换牌 · 点击取消' : '⇄ 移花接木 · 1 次';
-  $('skill-description').textContent = state.skillUsed ? '本局已用完。' : oneSelected && selecting ? '1 点牌不能换牌，请选择大于 1 点的牌。' : '大于 1 点可用 · 交换出牌，本轮免伤';
+  $('skill-description').textContent = state.skillUsed ? '本局技能已消耗，新对局恢复。' : oneSelected && selecting ? '1 点牌不能使用移花接木。技能未消耗，换一张牌即可开启。' : '选择大于 1 点的牌才能开启；不扣血并交换卡牌，C 无法得知你是否开启。';
   if (state.phase === 'over') {
     const win = Math.sign(state.hp - state.cpuHp);
     title = win > 0 ? '对局胜利！' : win < 0 ? '对局结束，惜败' : '对局结束，平局';
     desc = `${state.hp === 0 || state.cpuHp === 0 ? '一方血量归零。' : '双方手牌已用完。'}最终血量 ${state.hp} : ${state.cpuHp}，${win > 0 ? '你赢下了这场对决。' : win < 0 ? '再来一局，试试新的策略。' : '这一局不分高下。'}`;
     action = '再来一局';
   }
-  if (busy) { title = '双方出牌中…'; desc = '移入验牌区后，同时翻开。'; action = '正在开牌…'; }
   $('status-title').textContent = title;
   $('status-desc').textContent = desc;
   $('action').innerHTML = `${action} <span>→</span>`;
-  $('action').disabled = busy || (selecting && state.selected === null);
-  $('selection-hint').textContent = busy ? '请稍候，双方即将亮牌。' : state.phase === 'over' ? '相同的起点，下一局重新开始。' : selecting ? '普通回合：小牌扣血，同点不扣血。' : '本回合已结算，继续你的对决。';
+  $('action').disabled = selecting && state.selected === null;
+  $('selection-hint').textContent = state.phase === 'over' ? '相同的起点，下一局重新开始。' : selecting ? '普通出牌会弃置；技能交换的牌可再用。' : '本回合已结算，继续你的对决。';
   $('history-count').textContent = String(state.history.length).padStart(2, '0');
   $('history').innerHTML = state.history.length ? [...state.history].reverse().map(h => {
     const result = h.countered ? '⇄ 换牌 · 抵消 ×2' : h.swapped ? '⇄ 换牌 · 不扣血' : h.result > 0 ? `C −${h.damage} ♥` : h.result < 0 ? `你 −${h.damage} ♥` : h.amplified ? '平局 · ×2 已消耗' : '平局';
@@ -174,10 +151,9 @@ function render() {
   }).join('') : '<p class="history-empty">牌桌已就绪。<br>你的第一步，会是什么？</p>';
 }
 $('hand').addEventListener('click', e => { const button = e.target.closest('[data-id]'); if (button) choose(Number(button.dataset.id)); });
-$('action').addEventListener('click', () => { if (state.phase === 'select') confirm(); else if (state.phase === 'reveal') next(); else if (state.phase === 'over') start(); });
+$('action').addEventListener('click', () => { if (state.phase === 'select') confirm(); else if (state.phase === 'reveal') next(); else start(); });
 $('restart').addEventListener('click', start);
 $('skill').addEventListener('click', toggleSkill);
-DuelUI.init();
 start();
 if (document.modelContext?.registerTool) {
   try {
@@ -188,7 +164,7 @@ if (document.modelContext?.registerTool) {
       annotations: { readOnlyHint: false },
       execute: async input => {
         if (!input || !choose(input.cardId)) throw new Error('卡牌不可用，或当前不在选牌阶段');
-        if (!await confirm()) throw new Error('出牌已取消，请查看当前对局');
+        confirm();
         return { round: state.round, hp: state.hp, cpuHp: state.cpuHp, phase: state.phase, result: state.history.at(-1) };
       },
     })).catch(() => {});
