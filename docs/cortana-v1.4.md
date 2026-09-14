@@ -2,8 +2,8 @@
 
 本文件解释内部运行逻辑，**这些概率、模型和评分不展示在游戏页面**。页面仅展示规则、选牌状态和已经发动的技能。
 
-- 决策模块：[`dist/ai.js`](../dist/ai.js)
-- 游戏规则与结算：[`dist/game.js`](../dist/game.js)
+- 决策模块：[`dist/cortana-v1.4/ai.js`](../dist/cortana-v1.4/ai.js)
+- 游戏规则与结算：[`dist/cortana-v1.4/game.js`](../dist/cortana-v1.4/game.js)
 - 测试：[`tests/cortana-v1.4.test.cjs`](../tests/cortana-v1.4.test.cjs)
 
 ## 1. 本版新增规则

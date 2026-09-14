@@ -96,59 +96,18 @@
     }), actionPrior(actions, powered ? 0.55 : 0.08, true), 0.45);
     return [random, safe, resource];
   }
-  // Proofs cover every legal player response, independently of the learned models.
-  // Search three rounds with large hands, and the entire game at four cards or fewer.
-  function createTactics() {
-    const memo = new Map();
-    const key = (s, depth, lethal) => JSON.stringify([s.c.slice().sort((a,b)=>a-b), s.p.slice().sort((a,b)=>a-b), s.ch, s.ph, s.cs, s.ps, depth, lethal]);
-    const moves = s => groups(s.c).reverse().flatMap(({ value }) => s.cs
-      ? [{ value, powered: false }, { value, powered: true }]
-      : [{ value, powered: false }]);
-    const replies = s => playerActions(s).sort((a,b) => Number(b.swapped) - Number(a.swapped) || b.value - a.value);
-    function force(s, depth, lethal) {
-      const end = terminal(s);
-      if (end !== null) return lethal ? s.ph === 0 && s.ch > 0 : end === 1;
-      if (depth === 0 || (lethal && s.ph > Math.min(depth, s.c.length) + Number(s.cs))) return false;
-      const id = key(s, depth, lethal);
-      if (memo.has(id)) return memo.get(id);
-      const actions = replies(s);
-      const won = moves(s).some(move => actions.every(action => force(transition(s, move.value, action, move.powered), depth - 1, lethal)));
-      memo.set(id, won);
-      return won;
-    }
-    return position => {
-      const actions = replies(position);
-      const candidates = moves(position).map(move => ({ ...move, next: actions.map(action => transition(position, move.value, action, move.powered)) }));
-      function select(depth, lethal) {
-        const safe = candidates.filter(move => move.next.every(next => force(next, depth - 1, lethal)));
-        if (!safe.length) return null;
-        // Equally fast ordinary wins do not need the double-damage skill.
-        const ordinary = safe.filter(move => !move.powered);
-        return { kind: lethal ? 'lethal' : 'win', rounds: depth, moves: (ordinary.length ? ordinary : safe).map(({value,powered}) => ({value,powered})) };
-      }
-      const immediate = select(1, true) || select(1, false);
-      if (immediate) return immediate;
-      const limit = position.c.length <= 4 ? position.c.length + Number(position.ps) : 3;
-      for (const lethal of [true, false]) for (let depth = 2; depth <= limit; depth++) {
-        const found = select(depth, lethal);
-        if (found) return found;
-      }
-      return null;
-    };
-  }
   function createSolver(modelWeights) {
     const memo = new Map();
-    const tactics = createTactics();
-    function mode(position, powered, depth, forcedCards = null) {
-      const cGroups = groups(position.c).filter(group => !forcedCards || forcedCards.includes(group.value)), actions = playerActions(position);
-      const prior = normalize(cGroups.map(group => group.count));
+    function mode(position, powered, depth) {
+      const cGroups = groups(position.c), actions = playerActions(position);
+      const prior = cGroups.map(group => group.count / position.c.length);
       const deaths = [], matrix = cGroups.map(group => {
         const rowDeaths = []; deaths.push(rowDeaths);
         return actions.map(action => {
           const next = transition(position, group.value, action, powered);
           rowDeaths.push(next.ph === 0 ? 1 : 0);
           const end = terminal(next);
-          return forcedCards ? 1 : end !== null ? end : depth > 1 ? future(next, depth - 1) : leafValue(next);
+          return end !== null ? end : depth > 1 ? future(next, depth - 1) : leafValue(next);
         });
       });
       let cDistribution = [...prior];
@@ -158,7 +117,7 @@
         const scores = matrix.map(row => dot(row, probabilities));
         return { models, probabilities, scores };
       }
-      for (let i = 0; !forcedCards && i < 4; i++) {
+      for (let i = 0; i < 4; i++) {
         const { scores } = predict();
         const scored = softmax(scores, prior, 0.22);
         const target = scored.map((p, j) => 0.2 * prior[j] + 0.8 * p);
@@ -167,27 +126,16 @@
       const predicted = predict();
       return {
         value: dot(cDistribution, predicted.scores),
-        probabilities: position.c.map(card => { const i = cGroups.findIndex(group => group.value === card); return i < 0 ? 0 : cDistribution[i] / cGroups[i].count; }),
+        probabilities: position.c.map(card => { const i = cGroups.findIndex(group => group.value === card); return cDistribution[i] / cGroups[i].count; }),
         swapProbability: sum(predicted.probabilities.filter((_, j) => actions[j].swapped)),
         evidence: { weights: [...modelWeights], actions: actions.map(({ value, swapped }) => ({ value, swapped })), models: predicted.models },
       };
     }
     function decision(position, depth) {
-      const guarantee = tactics(position);
-      if (guarantee) {
-        const powered = guarantee.moves[0].powered;
-        const cards = guarantee.moves.map(move => move.value);
-        return {
-          normal: mode(position, false, 1, powered ? null : cards),
-          powered: position.cs ? mode(position, true, 1, powered ? cards : null) : null,
-          skillProbability: powered ? 1 : 0,
-          guarantee,
-        };
-      }
       const normal = mode(position, false, depth);
       const powered = position.cs ? mode(position, true, depth) : null;
       const skillProbability = powered ? sigmoid(Math.log(1 / 3) + 6 * (powered.value - normal.value)) : 0;
-      return { normal, powered, skillProbability, guarantee: null };
+      return { normal, powered, skillProbability };
     }
     function future(position, depth) {
       const key = JSON.stringify([position.c, position.p, position.ch, position.ph, position.cs, position.ps, depth]);
@@ -201,7 +149,7 @@
   }
   function analyzePosition(position, modelWeights = DEFAULT_BELIEFS) {
     if (!position.c.length || !position.p.length || position.ch <= 0 || position.ph <= 0 || [...position.c, ...position.p].some(card => !INITIAL_DECK.includes(card))) throw new Error('没有可分析的对局');
-    return createSolver(beliefs(modelWeights))({ ...position, c: [...position.c], p: [...position.p].sort((a, b) => a - b) }, 2);
+    return createSolver(beliefs(modelWeights))({ ...position, c: [...position.c].sort((a, b) => a - b), p: [...position.p].sort((a, b) => a - b) }, 2);
   }
   function analyzeRound(publicView) {
     const playerCards = reconstructPlayerCards(publicView.publicHistory);
@@ -212,17 +160,9 @@
   }
   function sampleIndex(probabilities, ticket) {
     if (!Number.isFinite(ticket) || ticket < 0 || ticket >= 1) throw new Error('无效的随机采样值');
-    let cumulative = 0, lastPositive = -1;
-    for (let i = 0; i < probabilities.length; i++) {
-      const probability = probabilities[i];
-      if (!Number.isFinite(probability) || probability < 0) throw new Error('无效的出牌概率');
-      if (probability === 0) continue;
-      lastPositive = i;
-      cumulative += probability;
-      if (ticket < cumulative) return i;
-    }
-    if (lastPositive < 0) throw new Error('没有可抽取的牌');
-    return lastPositive;
+    let cumulative = 0;
+    for (let i = 0; i < probabilities.length; i++) { cumulative += probabilities[i]; if (ticket < cumulative) return i; }
+    return probabilities.length - 1;
   }
   function planRound(publicView, skillTicket, cardTicket) {
     if (!Number.isFinite(skillTicket) || skillTicket < 0 || skillTicket >= 1) throw new Error('无效的技能采样值');

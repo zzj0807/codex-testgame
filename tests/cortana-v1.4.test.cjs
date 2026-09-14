@@ -1,6 +1,6 @@
 const {strict:assert}=require('node:assert');
 const fs=require('node:fs'),vm=require('node:vm');
-const AI=require('../dist/ai.js');
+const AI=require('../dist/cortana-v1.4/ai.js');
 const deck=[1,1,1,1.5,2,2,2.5,3];
 const view={ownCards:deck,publicHistory:[],ownHp:3,opponentHp:3,skillUsed:false,modelWeights:[1/3,1/3,1/3]};
 const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-10,`${a} != ${b}`);
@@ -31,7 +31,7 @@ assert.deepEqual(AI.planRound(poisoned,.3,.6),AI.planRound(view,.3,.6));
 const plan=AI.planRound(view,0,.99);assert.ok(Object.isFrozen(plan)&&Object.isFrozen(plan.evidence)&&Object.isFrozen(plan.evidence.models[0]));
 const observation={player:1.5,swapped:true};Object.defineProperty(observation,'cpu',{get(){throw Error('Do not condition likelihood on revealed C card')}});
 const posterior=AI.updateBeliefs(plan.evidence,observation);close(posterior.reduce((a,b)=>a+b,0),1);assert.ok(posterior.every(w=>w>=.1));assert.ok(Object.isFrozen(posterior));
-function game(){const els={};const context={document:{getElementById:id=>els[id]??(els[id]={attributes:{},setAttribute(k,v){this.attributes[k]=v},addEventListener(){}})},Math:Object.create(Math)};context.Math.random=()=>.99;vm.createContext(context);vm.runInContext(fs.readFileSync('dist/ai.js','utf8'),context);vm.runInContext(fs.readFileSync('dist/game.js','utf8'),context);return{context,els,run:s=>vm.runInContext(s,context)};}
+function game(){const els={};const context={document:{getElementById:id=>els[id]??(els[id]={attributes:{},setAttribute(k,v){this.attributes[k]=v},addEventListener(){}})},Math:Object.create(Math)};context.Math.random=()=>.99;vm.createContext(context);vm.runInContext(fs.readFileSync('dist/cortana-v1.4/ai.js','utf8'),context);vm.runInContext(fs.readFileSync('dist/cortana-v1.4/game.js','utf8'),context);return{context,els,run:s=>vm.runInContext(s,context)};}
 const g=game(),run=g.run,data=s=>JSON.parse(JSON.stringify(run(s)));
 const fresh=(a=.99,b=.99)=>run(`Math.random=(()=>{let d=[${a},${b}];return()=>d.length?d.shift():.99})();start()`);
 // UI restriction, auto-cancel, no charge and actual settlement guard.
@@ -68,6 +68,6 @@ for(let i=0;i<80;i++){
   const history=data('state.history');assert.deepEqual(AI.reconstructPlayerCards(history).sort((a,b)=>a-b),expected.p);assert.ok(history.every(h=>!h.swapped||h.player>1));assert.ok(history.filter(h=>h.swapped).length<=1);assert.ok(history.filter(h=>h.amplified).length<=1);assert.ok(++steps<=9);
  }
 }
-const html=fs.readFileSync('dist/index.html','utf8');assert.match(html,/对 Cortana 隐藏/);assert.match(html,/大于 1 点/);assert(!/softmax|概率|权重|记牌|后验|前瞻/.test(html));
+const html=fs.readFileSync('dist/cortana-v1.4/index.html','utf8');assert.match(html,/对 Cortana 隐藏/);assert.match(html,/大于 1 点/);assert(!/softmax|概率|权重|记牌|后验|前瞻/.test(html));
 console.log('PASS: legal moves, UI disable/cancel, hidden-input isolation, joint predictions, adaptive skill, two-HP lethal, frozen evidence, posterior, counters, simulator parity and 80 complete games.');
 console.log(JSON.stringify({lethalSkillProbability:lethal.skillProbability,openingSkillProbability:opening.skillProbability,openingSwapGuess:opening.normal.swapProbability,openingPoweredSwapGuess:opening.powered.swapProbability}));

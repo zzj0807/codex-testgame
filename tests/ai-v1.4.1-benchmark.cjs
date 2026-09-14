@@ -1,4 +1,4 @@
-const latest=require('../dist/cortana-v1.4/ai.js'),old=require('../dist/cortana-v1.3/ai.js');
+const latest=require('../dist/ai.js'),old=require('../dist/cortana-v1.4/ai.js');
 const deck=[1,1,1,1.5,2,2,2.5,3];
 const rng=seed=>()=>{seed=(Math.imul(1664525,seed)+1013904223)>>>0;return seed/4294967296};
 function play(ai,model,seed){
@@ -23,7 +23,7 @@ function play(ai,model,seed){
  return Math.sign(ch-ph);
 }
 const offset=Number(process.argv[2]||0),gameCount=Number(process.argv[3]||500);
-for(const opponent of ['random','counter','never','active'])for(const [version,ai]of [['v1.3',old],['v1.4',latest]]){
+for(const opponent of ['random','counter','never','active'])for(const [version,ai]of [['v1.4',old],['v1.4.1',latest]]){
  const scores={win:0,tie:0,loss:0};const games=gameCount;for(let n=0;n<games;n++){const result=play(ai,opponent,n+offset);scores[result>0?'win':result<0?'loss':'tie']++;}
  console.log(JSON.stringify({version,opponent,games,...scores,scoreRate:(scores.win+.5*scores.tie)/games}));
 }

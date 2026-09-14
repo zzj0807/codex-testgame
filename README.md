@@ -1,19 +1,30 @@
-# 八牌对决 · Cortana v1.4
+# 八牌对决 · Cortana v1.4.1
 
 **八张手牌、三点血量。选择你的牌，在公开技能与隐藏交换之间做出判断。**
 
 ## 🎮 点击这里直接玩
 
-### [▶ 开始游戏：最新版 v1.4](https://zzj0807.github.io/codex-testgame/?v=1.4)
+### [▶ 开始游戏：最新版 v1.4.1](https://zzj0807.github.io/codex-testgame/?v=1.4.1)
 
 无需注册、登录、下载或 API Key，手机和电脑浏览器均可游玩。
 
 历史版本独立保留：
 
+- [Cortana v1.4](https://zzj0807.github.io/codex-testgame/cortana-v1.4/)
 - [Cortana v1.3](https://zzj0807.github.io/codex-testgame/cortana-v1.3/)
 - [Cortana v1.2](https://zzj0807.github.io/codex-testgame/cortana-v1.2/)
 - [移花接木初版 v1.1](https://zzj0807.github.io/codex-testgame/swap-v1/)
 - [无技能经典版 v1.0](https://zzj0807.github.io/codex-testgame/classic/)
+
+## v1.4.1 更新
+
+- **确定斩杀必定执行。** 玩家 2 血、无法合法交换且 C 有压过全部剩余牌的牌时，必定配合技能结束对局；玩家 1 血时优先普通斩杀。
+- **连续斩杀与残局必胜。** 识别保留大牌应对交换、逼掉平局牌、普通连续攻击及安全承受一击后的斩杀。
+- 大手牌证明搜索覆盖三回合；四张牌及以下搜索至终局。只有检查玩家全部合法应对后才能判定必胜。
+- 保留公开信息推算、回合开始锁牌、隐藏交换和亮牌后学习的公平性规则。
+- v1.4 保留独立入口，旧版测试继续运行对应存档。
+
+[查看 v1.4.1 的斩杀场景、搜索范围和验证结果](docs/cortana-v1.4.1.md)。
 
 ## v1.4 更新
 
@@ -64,7 +75,8 @@
 
 | 版本 | Git 标签 | 本地入口 |
 | --- | --- | --- |
-| v1.4 隐藏换牌预测版 | `v1.4.0-cortana` | `dist/index.html` |
+| v1.4.1 确定斩杀版 | `v1.4.1-cortana` | `dist/index.html` |
+| v1.4 隐藏换牌预测版 | `v1.4.0-cortana` | `dist/cortana-v1.4/index.html` |
 | v1.3 公开信息决策版 | `v1.3.0-cortana` | `dist/cortana-v1.3/index.html` |
 | v1.2 Cortana 初版 | `v1.2.0-cortana` | `dist/cortana-v1.2/index.html` |
 | v1.1 移花接木初版 | `v1.1.0-swap` | `dist/swap-v1/index.html` |
@@ -91,7 +103,8 @@ node tests/game.test.cjs
 node tests/cortana.test.cjs
 node tests/cortana-v1.3.test.cjs
 node tests/cortana-v1.4.test.cjs
-node tests/ai-v1.4-benchmark.cjs
+node tests/cortana-v1.4.1.test.cjs
+node tests/ai-v1.4.1-benchmark.cjs 10000 250
 ```
 
 修改游戏并提交后发布：
